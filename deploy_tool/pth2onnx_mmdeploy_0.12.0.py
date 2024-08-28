@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*- #
+
+# ------------------------------------------------------------------
+# File Name:        pth2onnx_mmdeploy_0.12.0.py
+# Author:           wzw
+# Version:          0.1
+# Created:          2024/08/27
+# Description:      转换openmmlab权重文件到onnx
+# ------------------------------------------------------------------
+
 from mmdeploy.apis import torch2onnx
 from mmdeploy.backend.sdk.export_info import export2SDK
 
