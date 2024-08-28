@@ -6,36 +6,35 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 image_processor = AutoImageProcessor.from_pretrained("checkpoints\\vit-small-patch16-224", local_files_only=True)
 model = ViTModel.from_pretrained("checkpoints\\vit-small-patch16-224", local_files_only=True).to(device)
 vit_small_patch16_224_checkpoints= "checkpoints\\pytorch_vit_small_patch16_224_with_finetune.pt"
-model.load_state_dict(torch.load(vit_small_patch16_224_checkpoints,map_location=torch.device('cpu')))
+model.load_state_dict(torch.load(vit_small_patch16_224_checkpoints,map_location=torch.device(device)))
 model.eval()
 
 def dataload(rootpath, scene_name=None):
     """
         Args:
-            rootpath: 存放全部场景的建议目标与建议目标中心点的路径
+            rootpath: The path that stores the proposed target and the proposed target center point for all scenes
                     .
                     |-- d3
                     |-- label
                     |-- region
-            scene_name: 如果不指定场景名字则提取全部场景中建议目标的特征
+            scene_name: If no scene name is specified, the features of the proposed target in all scenes are extracted
 
         Returns:
-            all_scene_patches: 提取的全部场景的建议目标的特征
-            all_d3_patches: 提取的全部场景的建议目标的中心点
+            all_scene_patches: Extract the features of the proposed target for all scenes
+            all_d3_patches: Extract the center point of the proposed target for all scenes
     """
     train_region_floders_path = os.path.join(rootpath, 'region')
     train_d3_floders_path = os.path.join(rootpath, 'd3')
     region_floders_listdirs = os.listdir(train_region_floders_path)
-    # ----------------------- #
-    # 导入region image
-    # ----------------------- #
+    # -----------------------
+    # Traversal folder
+    # -----------------------
     all_scene_patches = {}
-    region_floders_listdirs_len = len(region_floders_listdirs)
     for i, scene_dir in enumerate(region_floders_listdirs):
         if scene_name == '{}{}{}'.format(scene_dir[5:12], scene_dir[13:15], scene_dir[16:22]):
             image_patches = []
             in_listdirs = os.listdir(os.path.join(train_region_floders_path, scene_dir))
-            # 按照图片id从小到大排序
+            # Sort by proposal id from smallest to largest
             in_listdirs.sort(key=lambda x: int(x.split('.')[0]))
             for in_dir in in_listdirs:
                 image_path = os.path.join(os.path.join(train_region_floders_path, scene_dir), in_dir)
@@ -43,17 +42,16 @@ def dataload(rootpath, scene_name=None):
                 if image.mode!="RGB":
                     image=image.convert("RGB")
                 image_patches.append(image)
-            # 批量处理1个region文件夹中的图片
+            # Batch extracting features of proposed targets from a region folder
             inputs = image_processor(image_patches, return_tensors="pt").to(device)
             outputs = model(**inputs)
             image_patch_features = outputs.last_hidden_state[:, 0, :].cpu().detach()
             all_scene_patches['{}{}{}'.format(scene_dir[5:12], scene_dir[13:15], scene_dir[16:22])] = image_patch_features
-            # print("feature extractor complete {}/{}".format(i + 1, region_floders_listdirs_len))
             break
         if scene_name == None:
             image_patches = []
             in_listdirs = os.listdir(os.path.join(train_region_floders_path, scene_dir))
-            # 按照图片id从小到大排序
+            # Sort by proposal id from smallest to largest
             in_listdirs.sort(key=lambda x: int(x.split('.')[0]))
             for in_dir in in_listdirs:
                 image_path = os.path.join(os.path.join(train_region_floders_path, scene_dir), in_dir)
@@ -61,14 +59,13 @@ def dataload(rootpath, scene_name=None):
                 if image.mode != "RGB":
                     image = image.convert("RGB")
                 image_patches.append(image)
-            # 批量处理1个region文件夹中的图片
+            # Batch extracting features of proposed targets from a region folder
             inputs = image_processor(image_patches, return_tensors="pt").to(device)
             outputs = model(**inputs)
             image_patch_features = outputs.last_hidden_state[:, 0, :].cpu().detach()
             all_scene_patches['{}{}{}'.format(scene_dir[5:12], scene_dir[13:15], scene_dir[16:22])] = image_patch_features
-            # print("feature extractor complete {}/{}".format(i + 1, region_floders_listdirs_len))
     # --------------------- #
-    # 导入region 3d
+    # Extract the 3d coordinates corresponding to the images in each folder
     # --------------------- #
     all_d3_patches = {}
     d3_out_listdirs = os.listdir(train_d3_floders_path)
@@ -100,9 +97,9 @@ def dataload(rootpath, scene_name=None):
 
 def dataload_for_eval(region_lst):
     """
-        用于推理或者评估
-        :param region_lst: 存放建议目标的列表
-        :return: 提取的建议目标的特征
+        Used for prediction or evaluation
+        Args: region_lst: A list of proposed targets
+        return: The features of the proposed targets
     """
     inputs = image_processor(region_lst, return_tensors="pt").to(device)
     outputs = model(**inputs)

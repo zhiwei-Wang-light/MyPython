@@ -7,13 +7,12 @@ import cv2 as cv
 import numpy as np
 import torch
 from PIL import Image
+import open3d as o3d
 from models.dataloader_vit_small_patch16_224_with_finetune import dataload, dataload_for_eval
 from segment_model.mmdeploy.demo.python.object_detection_for_3d_visual_grounding import generate_seg
-# envpath = '/home/light/anaconda3/envs/openmmlab/lib/python3.7/site-packages/cv2/qt/plugins/platforms'
-# os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = envpath
-# os.environ["TOKENIZERS_PARALLELISM"] = "false"
+from utils.utils import uv2xyz,del_file
 # -------- #
-# 配置
+# config
 # -------- #
 device = "cuda" if torch.cuda.is_available() else "cpu"
 parser = argparse.ArgumentParser(description='test')
@@ -35,52 +34,24 @@ for param in bert_model.parameters():
     param.requires_grad = False
 bert_model.eval()
 word2idx = [i / 100 for i in range(-100, 101)]
-# realsense
+# realsense inter parameter
 CAMERA_INTER = [389.911, 389.911, 321.213, 242.338]
 # scaling factor
 SCALE_FACTOR = 1000
-def del_file(path_data):
-    for i in os.listdir(path_data):  # os.listdir(path_data)#返回一个列表，里面是当前目录下面的所有东西的相对路径
-        file_data = path_data + "/" + i  # 当前文件夹的下面的所有东西的绝对路径
-        if os.path.isfile(file_data) == True:  # os.path.isfile判断是否为文件,如果是文件，就删除.如果是文件夹.递归给del_file.
-            os.remove(file_data)
-        else:
-            del_file(file_data)
-def uv2xyz(camera_inter, scalingFactor, depth, uv):
-    fx, fy, centerX, centerY = camera_inter
-    # -----------------------------------------------------------------
-    # 像素坐标u，v
-    # -----------------------------------------------------------------
-    u, v = uv
-    # -----------------------------------------------------------------
-    # 相机坐标X，Y，Z
-    # -----------------------------------------------------------------
-    Z = depth.getpixel((u, v)) / scalingFactor
-    if Z == 0 :
-        return False
-    else:
-        X = (u - centerX) * Z / fx
-        Y = (v - centerY) * Z / fy
-        return [X, Y, Z]
 
 
-def get_seg_info(rgb_path, depth_path, camera_inter, scale_factor):
+
+def get_seg_info(rgb_path, depth_path, camera_inter:list, scale_factor):
     """
-    分割rgb图像并将mask映射到三维
+    Segment the image and transform it to the camera coordinate system
     Args:
-        rgb_dir: 待分割的image文件夹路径
-        depth_path: 深度图文件夹路径
-        camera_inter: 相机内参
-        scale_factor: 缩放因子
+        rgb_path: The path to the rgb image
+        depth_path: The path to the depth image
+        camera_inter: Camera inter parameter
+        scale_factor: Scaling factor
 
-    Returns:
-        dict: dtype=dict key: 相机id value: 第一个列表保存的segs分类,第二个列表保存mask在相机坐标系下的坐标,相机坐标系不是数组坐标系，好像是像素坐标系，第三个列表放入seg的box坐标
     """
-    # 保存全部rgb的分割结果
     dict = {}
-    # ---------------------------------------------------------------------
-    # 第一个[]放入seg类别，第二个[]放入seg的mask坐标,第三个[]放入seg的box坐标
-    # ---------------------------------------------------------------------
     dict["info"] = [[], [], [], []]
     color_image = cv.imread(rgb_image_path)
     t1 = time.time()
@@ -89,11 +60,8 @@ def get_seg_info(rgb_path, depth_path, camera_inter, scale_factor):
     print("segment cost time:", t2 - t1)
     depth = Image.open(depth_path)
     for i, box_class in enumerate(boxes_class):
-        # where返回的是numpy坐标，numpy坐标转化为像素坐标需要调换
         v, u = np.where(segs[i] == True)
-        u = np.array((u), dtype=np.int32)
-        v = np.array((v), dtype=np.int32)
-        uvs = np.concatenate([u.reshape([u.shape[0], 1]), v.reshape([v.shape[0], 1])], axis=1)
+        uvs = np.column_stack((u, v))
         dict["info"][0].append(box_class)
         dict["info"][2].append(boxes[i])
         xyz_list = []
@@ -107,18 +75,19 @@ def get_seg_info(rgb_path, depth_path, camera_inter, scale_factor):
         dict["info"][1].append(xyz_list)
         dict["info"][3].append(rgb_list)
     return dict
-def get_obb(points,i):
+def get_obb(points:list,i):
     """
-    获取物体点云的中心坐标与8个顶点坐标的obb包围盒信息。
+    Obtain the center coordinates of the object's point cloud and the OBB bounding box
+    information with 8 vertex coordinates。
 
     Args:
-        points (list): 物体点云的xyz坐标。
+        points (list): The XYZ coordinates of the object's point cloud。
 
     Returns:
-        tuple or None: 如果计算成功，返回一个包含中心坐标和顶点坐标的元组；如果出现异常，返回(None, None)。
+        tuple or None: If the calculation is successful, return a tuple containing the center
+        coordinates and vertex coordinates; if an exception occurs, return (None, None).。
     """
     try:
-        # 处理点云数据
         pcd = o3d.geometry.PointCloud()
         if len(points) < 4:
             points = np.repeat(points, 4)
@@ -126,8 +95,6 @@ def get_obb(points,i):
         pcd.points = o3d.utility.Vector3dVector(points)
         cl, ind = pcd.remove_statistical_outlier(nb_neighbors=200, std_ratio=0.2)
         pcd = pcd.select_by_index(ind)
-
-        # 计算obb包围盒
         obb = pcd.get_oriented_bounding_box()
         center = np.asarray(obb.get_center())
         vertex_set = np.asarray(obb.get_box_points())
@@ -146,16 +113,19 @@ def data_info_extractor(rgb_image_path, depth_image_path):
 
 def get_proposals(dict_info, image):
     """
-    对每个建议目标计算中心点
-    :param dict_info:
-    :param image:
-    :return:
+    Crop the target object in the image
+    Args:
+        dict_info: Information after segmenting the image
+        image: Origin image
+
+    Returns:
+
     """
     boxes = dict_info["info"][2]
     seg_points = dict_info["info"][1]
     rgb_points1 = dict_info["info"][3]
     # ----------------------- #
-    # 截取region
+    # Crop region
     # ----------------------- #
     region_lst = []
     center_lst = []
@@ -165,6 +135,7 @@ def get_proposals(dict_info, image):
     rgb_points = []
     del_file("region/")
     for i, box in enumerate(boxes):
+        # Crop the target object in the image
         region = image.crop((int(box[0]), int(box[1]), int(box[2]), int(box[3])))
         center, vertex_set = get_obb(seg_points[i], i)
         if center != None:
@@ -180,16 +151,17 @@ def get_proposals(dict_info, image):
 
 def d3_padding(batch_d3_patches):
     """
-    每个图像分割出的建议目标数量是不一致的，在这里统一补齐到同一个长度
-    :param batch_d3_patches:
-    :return:
+    The number of suggested targets segmented from each image is inconsistent;
+    here, we standardize them to the same length
+    :param batch_d3_patches:The 3D coordinates of the segmented objects shape=(b,n,3)
+    :return: shape=(b,padding,3)
     """
     batch_d3_paded = []
     batch_d3_patches_token = []
-    for b in batch_d3_patches:
+    for d3s in batch_d3_patches:
         d3_patches = []
-        for p in b:
-            d3_patches.append([word2idx.index(round(float(i), 2)) for i in p])
+        for xyz in d3s:
+            d3_patches.append([word2idx.index(round(float(i), 2)) for i in xyz])
         batch_d3_patches_token.append(d3_patches)
     for d3_patches in batch_d3_patches_token:
         d3_patches = np.asarray(d3_patches)
@@ -203,17 +175,15 @@ def d3_padding(batch_d3_patches):
 
 def image_padding(batch_image_patches):
     """
-    每个图像分割出的建议目标数量是不一致的，在这里统一补齐到同一个长度
-    :param batch_image_patches:
-    :return:
+    The number of suggested targets segmented from each image is inconsistent;
+     here, we standardize them to the same length
+    :param batch_image_patches:The 3D coordinates of the segmented objects shape=(b,n,dim)
+    :return:shape=(b,padding,dim)
     """
     batches_features_list = []
     mask_list = []
     for image_patches in batch_image_patches:
-        patches_list = []
-        for image in image_patches:
-            patches_list.append(image)
-        patches_tensor = torch.stack(patches_list)
+        patches_tensor = torch.stack(image_patches)  # Stack patches directly
         patches_features_paded, padding_mask = patches_padding(args.max_length, patches_tensor)
         batches_features_list.append(patches_features_paded)
         mask_list.append(padding_mask)
@@ -225,12 +195,12 @@ def image_padding(batch_image_patches):
 def patches_padding(max_length, image_query):
     """
     Args:
-        max_length: 最大长度
-        image_qurey: 没有补齐的状态
+        max_length: max length
+        image_qurey: The state without padding
 
     Returns:
-        batch_image_qurey_paded: 补齐之后的序列，现在就可以当做是一个nlp来处理 shape=(b,l,dim)
-        batch_image_qurey_padding_mask: 补齐之后的mask,shape=(b,l)
+        batch_image_qurey_paded: The padded sequence can now be treated as an NLP task, shape=(b,l,dim)
+        batch_image_qurey_padding_mask: The padded mask,shape=(b,l)
     """
 
     image_qurey_paded = torch.concat(
@@ -243,7 +213,8 @@ def patches_padding(max_length, image_query):
 
 
 def predict(region_lst, center_lst, test_question):
-    # 提取regions特征
+    # Extract image features of multiple object targets segmented from the complete
+    # image using ViT (Vision Transformer).
     regions_feature = dataload_for_eval(region_lst)
     test_d3_patches = np.asarray([center_lst])
     test_d3_patches = test_d3_patches / np.max(abs(test_d3_patches))
