@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*- #
-
 # ------------------------------------------------------------------
 # File Name:        pth2onnx_mmdeploy_0.12.0.py
 # Author:           wzw
@@ -21,7 +20,7 @@ device = 'cpu'
 
 # 1. convert model to onnx
 torch2onnx(img, work_dir, save_file, deploy_cfg, model_cfg,
-  model_checkpoint, device)
+           model_checkpoint, device)
 
 # 2. extract pipeline info for sdk use (dump-info)
 export2SDK(deploy_cfg, model_cfg, work_dir, pth=model_checkpoint, device=device)
