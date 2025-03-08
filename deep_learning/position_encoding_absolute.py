@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*- #
+# ------------------------------------------------------------------
+# File Name:        position_encoding_absolute.py
+# Author:           wzw
+# Version:          0.1
+# Created:          2024/11/2
+# Description:      绝对位置编码，分母的实现 torch.exp(torch.arrange(0,d_model,2)*(-log(10000)/d_model))
+# ------------------------------------------------------------------
 import torch
 import torch.nn as nn
 import math

@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*- #
+# ------------------------------------------------------------------
+# File Name:        cbow.py
+# Author:           wzw
+# Version:          0.1
+# Created:          2024/11/2
+# Description:      词袋模型基于词频的一种编码方式
+# ------------------------------------------------------------------
 from sklearn.feature_extraction.text import CountVectorizer
 
 corpus = ["I come to China to travel",
