@@ -146,13 +146,76 @@ def feature_matching_with_bf(image_path1, image_path2, window_size=(1200, 600)):
         'keypoints2': kp2
     }
 
+from typing import Tuple, Union
+def resize_and_pad(image: np.ndarray,
+                   K: np.ndarray,
+                   target_size: Tuple[int, int],
+                   pad_value: Union[int, Tuple[int, int, int]] = 0) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    调整图像大小并添加填充
+
+    Args:
+        image: 输入图像 (H, W, C) 或 (H, W)
+        K: 相机内参矩阵 (3x3)
+        target_size: 目标尺寸 (width, height)
+        pad_value: 填充值，对于彩色图像可以是三元组 (B, G, R)
+
+    Returns:
+        padded_image: 调整大小并填充后的图像
+        K_new: 更新后的相机内参矩阵
+    """
+    target_width, target_height = target_size
+    h, w = image.shape[:2]
+
+    # 计算缩放比例
+    scale = min(target_width / w, target_height / h)
+
+    # 计算新尺寸
+    new_w = int(w * scale)
+    new_h = int(h * scale)
+
+    # 调整图像大小
+    resized_image = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+
+    # 计算填充
+    pad_w = target_width - new_w
+    pad_h = target_height - new_h
+    pad_left = pad_w // 2
+    pad_top = pad_h // 2
+
+    # 添加填充
+    padded_image = cv2.copyMakeBorder(
+        resized_image,
+        pad_top,
+        pad_h - pad_top,
+        pad_left,
+        pad_w - pad_left,
+        cv2.BORDER_CONSTANT,
+        value=pad_value
+    )
+
+    # 更新相机内参矩阵
+    K_new = K.copy()
+    K_new[0, 0] *= scale  # fx
+    K_new[1, 1] *= scale  # fy
+    K_new[0, 2] = (K[0, 2] - 0.5) * scale + pad_left + 0.5  # cx
+    K_new[1, 2] = (K[1, 2] - 0.5) * scale + pad_top + 0.5  # cy
+
+    return padded_image, K_new
 
 # 使用示例
 if __name__ == "__main__":
-    image1_path = f"/home/jd/wangzhiwei225/JDCode/RobotTaskSupervisor/SourceVision/env/1/calibration/src/gray_0.png"  # 替换为你的第一张图像路径
-    image2_path = f"/home/jd/wangzhiwei225/JDCode/RobotTaskSupervisor/SourceVision/env/1/calibration/tgt/gray_0.png"  # 替换为你的第二张图像路径
-
-    result = feature_matching_with_bf(image1_path, image2_path)
+    image1_path = f"/home/jd/wangzhiwei225_data/标定数据/merge/track_0.jpeg"  # 替换为你的第一张图像路径
+    image2_path = f"/home/jd/wangzhiwei225_data/标定数据/merge/seg_0.png"  # 替换为你的第二张图像路径
+    K = np.array([[500.0, 0, 320.0],
+                  [0, 500.0, 180.0],
+                  [0, 0, 1.0]])
+    img1 = cv2.imread(image1_path)
+    img2 = cv2.imread(image2_path)
+    img1, K = resize_and_pad(img1, K, (img2.shape[1], img2.shape[0]), 0)
+    cv2.imwrite("track.png", img1)
+    cv2.imwrite("seg.png",img2)
+    result = feature_matching_with_bf("track.png", "seg.png")
 
     if result is not None:
         print(f"Average pixel distance: {result['avg_pixel_distance']:.2f}px")
