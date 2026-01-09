@@ -12,14 +12,15 @@ import numpy as np
 # y'=2*theta*x+2*theta
 beta = 0.9
 lr = 0.1
-v = 0
+l2_lambda = 0.1
+m= 0
 x = np.random.rand()
 theta = np.random.rand()
-y = theta * x ** 2 + theta * 2 * x
-print("初始的y值:", y)
 for epoch in range(100):
-    v = beta * v + (1 - beta) * (x ** 2 + 2 * x)
-    v_mat = v / (1 - beta ** (epoch+1))
-    theta = theta - lr * v_mat
     y = theta * x ** 2 + theta * 2 * x
     print("逐渐减小的y值:", y)
+    # loss=y**2+0.5*l2_lambda * theta**2
+    grad = 2 * y * (x ** 2 + 2 * x) + l2_lambda * theta
+    m = beta * m + (1 - beta) * grad
+    v_mat = m / (1 - beta ** (epoch + 1))
+    theta = theta - lr * v_mat
