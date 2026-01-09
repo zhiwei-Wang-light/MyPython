@@ -20,7 +20,7 @@ class SelfAttention(nn.Module):
 
         # 创建填充掩码（0表示填充，1表示有效输入）
         self.mask = torch.tensor([[1, 1, 1, 0, 0],
-                                  [1, 1, 0, 0, 0]]).unsqueeze(1)  # 形状为 (batch_size, 1, seq_length)
+                                  [1, 1, 0, 0, 0]]).unsqueeze(1).cuda()  # 形状为 (batch_size, 1, seq_length)
 
     def forward(self, inputs):
         # inputs 形状: (batch_size, seq_length, embedding_dim)
@@ -40,14 +40,13 @@ class SelfAttention(nn.Module):
 
         return output, attention_weights
 
-
 # 使用示例
 embedding_dim = 512
 seq_length = 5
 batch_size = 2
-inputs = torch.rand(batch_size, seq_length, embedding_dim)  # 随机输入
+inputs = torch.rand(batch_size, seq_length, embedding_dim).cuda()  # 随机输入
 
-self_attention = SelfAttention(embedding_dim)
+self_attention = SelfAttention(embedding_dim).cuda()
 output, attention_weights = self_attention(inputs)
 
 print("Output:\n", output)

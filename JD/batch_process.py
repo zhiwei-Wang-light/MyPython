@@ -73,6 +73,6 @@ def batch_process_config(cage_small_dir_path, key, new_value):
 
 
 if __name__ == "__main__":
-    batch_process_config("/home/jd/wangzhiwei225/JDCode/RobotTaskSupervisor/PackVision/palletizingZones",
+    batch_process_config("/home/jd/RobotTaskSupervisor/PackVision/palletizingZones",
                          "ros_type",
                          1)

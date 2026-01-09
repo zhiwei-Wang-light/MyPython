@@ -166,29 +166,29 @@ def main():
     """
     主函数 - 示例使用
     """
-    # # 文件路径配置
-    # base_path = "/home/jd/wangzhiwei225/JDCode/RobotTaskSupervisor/SourceVision/TestIt"
-    #
-    # rgb_image_path = os.path.join(base_path, "rgb_0.png")
-    # depth_image_path = os.path.join(base_path, "depth_0.xml")
-    # camera_intr_path = os.path.join(base_path, "TYRgbCameraParameters.xml")
-    # output_ply_path = os.path.join(base_path, "RGB_0.pcd")
-    #
-    # # try:
-    # # 读取相机参数
-    # intr_matrix, dist_coeffs = read_camera_parameters(camera_intr_path)
-    #
-    # # 生成彩色点云
-    # generate_point_cloud_from_rgb_depth(
-    #     rgb_image_path,
-    #     depth_image_path,
-    #     output_ply_path,
-    #     intr_matrix,
-    #     dist_coeffs,
-    #     depth_scale=1000.0
-    # )
+    # 文件路径配置
+    base_path = "/home/jd/wangzhiwei225/JDCode/RobotTaskSupervisor2/SourceVision/handeye_data/2/"
+    target_path="/home/jd/wangzhiwei225/JDCode/RobotTaskSupervisor2/SourceVision/handeye_data/"
+    rgb_image_path = os.path.join(base_path, "rgb_22.png")
+    depth_image_path = os.path.join(base_path, "depth_22.xml")
+    camera_intr_path = os.path.join(base_path, "TYRgbCameraParameters.xml")
+    output_ply_path = os.path.join(target_path, "RGB2_22.pcd")
 
-    generate_point_cloud_from_depth_only("/home/jd/diskSpace/data/images/1/1_1_239222303819_239222303819_s_depth_2025-12-04-20-20-14-196.xml","/home/jd/wangzhiwei225/JDCode/RobotTaskSupervisor2/EyeInHandVision/TestIt/depth.pcd")
+    # try:
+    # 读取相机参数
+    intr_matrix, dist_coeffs = read_camera_parameters(camera_intr_path)
+
+    # 生成彩色点云
+    generate_point_cloud_from_rgb_depth(
+        rgb_image_path,
+        depth_image_path,
+        output_ply_path,
+        intr_matrix,
+        dist_coeffs,
+        depth_scale=1000.0
+    )
+
+    # generate_point_cloud_from_depth_only("/home/jd/wangzhiwei225_data/标定数据/handeye_data/l3/6/depth_0.xml","/home/jd/wangzhiwei225_data/标定数据/handeye_data/l3/6/depth_0.pcd")
 
     # except Exception as e:
     #     print(f"处理过程中发生错误: {e}")

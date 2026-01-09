@@ -16,18 +16,21 @@ def get_points_from_images(img1, img2, num_points=4):
         if event == cv2.EVENT_LBUTTONDOWN and len(points_img1) < num_points:
             points_img1.append((x, y))
             cv2.circle(temp_img1, (x, y), 5, (0, 255, 0), -1)
+            cv2.namedWindow('Image 1 - Select Points', cv2.WINDOW_NORMAL)
             cv2.imshow('Image 1 - Select Points', temp_img1)
 
     def click_event_img2(event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN and len(points_img2) < num_points:
             points_img2.append((x, y))
             cv2.circle(temp_img2, (x, y), 5, (0, 255, 0), -1)
+            cv2.namedWindow('Image 2 - Select Points', cv2.WINDOW_NORMAL)
             cv2.imshow('Image 2 - Select Points', temp_img2)
 
     # 显示图像 1
     temp_img1 = img1.copy()
+    cv2.namedWindow('Image 1 - Select Points', cv2.WINDOW_NORMAL)
     cv2.imshow('Image 1 - Select Points', temp_img1)
-    cv2.setMouseCallback('Image 1 - Select Points', click_event_img1)
+    cv2. setMouseCallback('Image 1 - Select Points', click_event_img1)
 
     print(f"请在 Image 1 中依次选择 {num_points} 个对应点")
     while len(points_img1) < num_points:
@@ -37,6 +40,7 @@ def get_points_from_images(img1, img2, num_points=4):
 
     # 显示图像 2
     temp_img2 = img2.copy()
+    cv2.namedWindow('Image 2 - Select Points', cv2.WINDOW_NORMAL)
     cv2.imshow('Image 2 - Select Points', temp_img2)
     cv2.setMouseCallback('Image 2 - Select Points', click_event_img2)
 
@@ -100,8 +104,9 @@ def stitch_images_with_homography(image1, image2, H, blend_ratio=0.5):
         blend_ratio,
         image2,
         1 - blend_ratio,
-        0
+        0.5
     )
+    # result[y_start:y_end, x_start:x_end]=blend(result[y_start:y_end, x_start:x_end],image2)
 
     plt.figure(figsize=(12, 8))
     plt.imshow(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
@@ -112,22 +117,59 @@ def stitch_images_with_homography(image1, image2, H, blend_ratio=0.5):
     cv2.imwrite('stitched_manual_points.png', result)
     print("✅ 拼接完成，结果已保存为 stitched_manual_points.png")
 
+def blend(srcImg, warpImg, savename=None):
+    """
+    图片融合，
+    """
+    rows, cols = srcImg.shape[:2]
+    # 找到左右重叠区域
+    global left, right
+    for col in range(0, cols):
+        if srcImg[:, col].any() and warpImg[:, col].any():
+            left = col
+            break
+    for col in range(cols - 1, 0, -1):
+        if srcImg[:, col].any() and warpImg[:, col].any():
+            right = col
+            break
 
+    res = np.zeros([rows, cols, 3], np.uint8)
+    alpha = np.zeros((rows, right - left, 3), dtype=np.float32)
+    for row in range(0, rows):
+        for col in range(left, right):
+            if not srcImg[row, col].any():  # src不存在
+                alpha[row, col - left, :] = 0
+            elif not warpImg[row, col].any():  # warpImg 不存在
+                alpha[row, col - left, :] = 1
+            else:  # src 和warp都存在
+                srcImgLen = float(abs(col - left))
+                testImgLen = float(abs(col - right))
+                alpha[row, col - left, :] = testImgLen / (srcImgLen + testImgLen)
+
+    res[:, :left] = srcImg[:, :left]
+    res[:, right:] = warpImg[:, right:]
+    res[:, left:right] = np.clip(srcImg[:, left:right] * alpha + warpImg[:, left:right] * (np.ones_like(alpha) - alpha),
+                                 0, 255)
+
+    # opencv is bgr, matplotlib is rgb
+    res = cv2.cvtColor(res, cv2.COLOR_BGR2RGB)
+    if savename is not None:
+        plt.imsave(savename, res)
+    return res
 # ---------- Step 4: 主程序 ----------
 if __name__ == "__main__":
-    image1_path = "/home/jd/wangzhiwei225_data/标定数据/20251112/track_14.jpeg"
-    image2_path = "/home/jd/wangzhiwei225_data/标定数据/20251112/seg_14.png"
+    image1_path = "/home/jd/wangzhiwei225_data/标定数据/handeye_data/l2/6/rgb_0_bev.png"
+    image2_path = "/home/jd/wangzhiwei225_data/标定数据/handeye_data/l3/6/rgb_0_bev.png"
 
-    img1 = cv2.imread(image1_path, 0)
-    img2 = cv2.imread(image2_path, 0)
+    img1 = cv2.imread(image1_path)
+    img2 = cv2.imread(image2_path)
 
     # 手动选择对应点
     src_pts, dst_pts = get_points_from_images(img1, img2, num_points=4)
 
     print("选取的点对：")
-    for i in range(len(src_pts)):
-        print(f"点{i+1}: 图1 {src_pts[i]} -> 图2 {dst_pts[i]}")
-
+    # for i in range(len(src_pts)):
+    #     print(f"点{i+1}: 图1 {src_pts[i]} -> 图2 {dst_pts[i]}")
     # 使用RANSAC计算单应矩阵
     H, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC)
     # H=cv2.getPerspectiveTransform(src_pts,dst_pts)

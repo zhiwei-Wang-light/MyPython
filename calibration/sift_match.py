@@ -205,14 +205,14 @@ def resize_and_pad(image: np.ndarray,
 
 # 使用示例
 if __name__ == "__main__":
-    image1_path = f"/home/jd/wangzhiwei225_data/标定数据/merge/track_0.jpeg"  # 替换为你的第一张图像路径
-    image2_path = f"/home/jd/wangzhiwei225_data/标定数据/merge/seg_0.png"  # 替换为你的第二张图像路径
-    K = np.array([[500.0, 0, 320.0],
-                  [0, 500.0, 180.0],
-                  [0, 0, 1.0]])
+    image1_path = f"/home/jd/wangzhiwei225_data/bev数据/xm_xb_01/handeye_data_0105/home/jd/RobotTaskSupervisor2/SourceVision/handeye_data/1/rgb_227.png"  # 替换为你的第一张图像路径
+    image2_path = f"/home/jd/wangzhiwei225_data/bev数据/xm_xb_01/handeye_data_0105/home/jd/RobotTaskSupervisor2/SourceVision/handeye_data/1/rgb_228.png"  # 替换为你的第二张图像路径
+    # K = np.array([[500.0, 0, 320.0],
+    #               [0, 500.0, 180.0],
+    #               [0, 0, 1.0]])
     img1 = cv2.imread(image1_path)
     img2 = cv2.imread(image2_path)
-    img1, K = resize_and_pad(img1, K, (img2.shape[1], img2.shape[0]), 0)
+    # img1, K = resize_and_pad(img1, K, (img2.shape[1], img2.shape[0]), 0)
     cv2.imwrite("track.png", img1)
     cv2.imwrite("seg.png",img2)
     result = feature_matching_with_bf("track.png", "seg.png")

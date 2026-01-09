@@ -17,18 +17,18 @@ criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.1)
 objpoints = []  # 3d point in real world space
 imgpoints = []  # 2d points in image plane.
 images = [
-    "/home/jd/wangzhiwei225_data/标定数据/20251112/track_6.jpeg"]
+    "/home/jd/wangzhiwei225/JDCode/RobotTaskSupervisor2/SourceVision/handeye_data/1/rgb_24.png"]
 for fname in images:
     img = cv.imread(fname)
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     # Find the chess board corners
-    ret, corners = cv.findChessboardCorners(gray, (7, 6), None)
+    ret, corners = cv.findChessboardCorners(gray, (11, 8), None)
     # If found, add object points, image points (after refining them)
     if ret == True:
-        corners2 = cv.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+        corners2 = cv.cornerSubPix(gray, corners, (3, 3), (-1, -1), criteria)
         imgpoints.append(corners)
         # Draw and display the corners
-        cv.drawChessboardCorners(img, (7, 6), corners2, ret)
+        cv.drawChessboardCorners(img, (11,8), corners2, ret)
         cv.imshow('img', img)
         cv.waitKey(0)
 cv.destroyAllWindows()

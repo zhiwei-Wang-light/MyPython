@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 c1_images_names = sorted(
-    glob.glob('/home/jd/wangzhiwei225_data/标定数据/handeye_data_1231/handeye_data/2/gray_*.png'))
+    glob.glob('/home/jd/wangzhiwei225_data/标定数据/handeye_data_1231/handeye_data/1/gray_*.png'))
 c2_images_names = sorted(
-    glob.glob('/home/jd/wangzhiwei225_data/标定数据/handeye_data_1231/handeye_data/2/rgb_*.png'))
+    glob.glob('/home/jd/wangzhiwei225_data/标定数据/handeye_data_1231/handeye_data/1/rgb_*.png'))
 print(c1_images_names)
 print(c2_images_names)
 c1_images = []
@@ -24,7 +24,6 @@ def find_corners(image_names, rotate=True):
     images = []
     for imname in image_names:
         im = cv2.imread(imname, 1)
-        # im=cv2.rotate(im,cv2.ROTATE_90_CLOCKWISE)
         images.append(im)
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
@@ -69,51 +68,23 @@ points1all = np.array([pt.ravel() for pts in imgpoints1_common for pt in pts], d
 points2all = np.array([pt.ravel() for pts in imgpoints2_common for pt in pts], dtype=np.float32)
 print(points1all.shape)
 print(points2all.shape)
-# 计算基础矩阵
-F, mask = cv2.findFundamentalMat(points1all, points2all, cv2.FM_RANSAC)
-print("F:",F)
-# 图像大小
-img_size = (640*2, 480*2)
+H, mask = cv2.findHomography(points1all, points2all, cv2.RANSAC)
+print(H)
+# H=np.asarray([[ 1.99356262e+00 , 1.11113191e-02 ,-2.75159734e+02],
+#  [-2.78455812e-02 , 2.08840511e+00, -2.33361578e+02],
+#  [-4.07127361e-05  ,2.97007406e-05 , 1.00000000e+00]])
 
 img1 = cv2.imread(
-    '/home/jd/wangzhiwei225_data/标定数据/handeye_data_1231/handeye_data/2/gray_18.png', 1)
-img2 = cv2.imread('/home/jd/wangzhiwei225_data/标定数据/handeye_data_1231/handeye_data/2/rgb_18.png',
+    '/home/jd/wangzhiwei225_data/标定数据/handeye_data_1231/handeye_data/1/gray_18.png', 1)
+img2 = cv2.imread('/home/jd/wangzhiwei225_data/标定数据/handeye_data_1231/handeye_data/1/rgb_18.png',
                   1)
-# img1=cv2.rotate(img1,cv2.ROTATE_90_CLOCKWISE)
-# img2=cv2.rotate(img2,cv2.ROTATE_90_CLOCKWISE)
-gray_left = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-gray_right = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+img1_rectified = cv2.warpPerspective(img1, H, (img2.shape[1],img2.shape[0]))
+img2_rectified = img2
 
-# 找到棋盘格角点
-ret_left, corners_left = cv2.findChessboardCorners(gray_left, (11, 8), None)
-ret_right, corners_right = cv2.findChessboardCorners(gray_right, (11, 8), None)
+# 显示校正后的图像
+cv2.imwrite('Rectified Image 1.png', img1_rectified)
+cv2.imwrite('Rectified Image 2.png', img2_rectified)
 
-criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-
-print(ret_left, ret_right)
-
-if ret_left and ret_right:
-    # 提高角点的精度
-    corners_left = cv2.cornerSubPix(gray_left, corners_left, (11, 11), (-1, -1), criteria)
-    corners_right = cv2.cornerSubPix(gray_right, corners_right, (11, 11), (-1, -1), criteria)
-
-# 将角点坐标转换为float32格式
-points1 = np.array([pt[0] for pt in corners_left], dtype=np.float32).reshape(-1, 2)
-points2 = np.array([pt[0] for pt in corners_right], dtype=np.float32).reshape(-1, 2)
-# 进行立体校正
-retval, H1, H2 = cv2.stereoRectifyUncalibrated(points1all, points2all, F, img_size)
-
-
-if retval:
-    # 计算校正映射
-    img1_rectified = cv2.warpPerspective(img1, H1, img_size)
-    img2_rectified = cv2.warpPerspective(img2, H2, img_size)
-
-    # 显示校正后的图像
-    cv2.imwrite('Rectified Image 1.png', img1_rectified)
-    cv2.imwrite('Rectified Image 2.png', img2_rectified)
-else:
-    print("立体校正失败")
 
 plt.figure(figsize=(20, 20))
 
@@ -131,7 +102,7 @@ for i in range(0,1):  # 以第一对图片为例
     # 在已经极线对齐的图片上均匀画线
     for i in range(1, 20):
         len = height / 20
-        plt.axhline(y=i * len, color='r', linestyle='-')
+        plt.axhline(y=i * len, color='r', linestyle='--')
     for i in range(1, 40):
         len = width / 40
         plt.axvline(x=i * len, color='r', linestyle='--')
