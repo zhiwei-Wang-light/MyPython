@@ -74,7 +74,7 @@ def parse_log_file(log_file_path):
 
 # 使用示例
 if __name__ == "__main__":
-    log_file = "/home/jd/wangzhiwei225_data/cage_cart/test_data/xm_xb_01/logs_1128/home/jd/diskSpace/data/logs/pack_vision_2025-11-27-22-25-13-541.txt"  # 替换为您的日志文件路径
+    log_file = "/home/jd/wangzhiwei225_data/cage_cart/test_data/xm_ld_02_l/logs_1229/home/jd/diskSpace/data/logs/pack_vision_2025-12-26-17-51-50-761.txt"  # 替换为您的日志文件路径
 
     dist_list, ang_list, matrix_list, cage_wrong = parse_log_file(log_file)
 

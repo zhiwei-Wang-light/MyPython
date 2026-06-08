@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*- #
+# ------------------------------------------------------------------
+# File Name:        kalman_filter.py
+# Author:           wzw
+# Version:          0.1
+# Created:          2026/2/3
+# Description:      卡尔曼滤波
+# ------------------------------------------------------------------
 import numpy as np
 import matplotlib.pyplot as plt
 Z=np.arange(0,100)

@@ -74,7 +74,6 @@ def generate_point_cloud_from_rgb_depth(rgb_image_path, depth_image_path, output
 
     # 读取深度数据
     depth_image = read_depth_from_xml(depth_image_path)
-
     # 校正RGB图像畸变
     rgb_image = cv2.undistort(rgb_image, intr_matrix, dist_coeffs, None, intr_matrix)
 
@@ -115,8 +114,8 @@ def generate_point_cloud_from_rgb_depth(rgb_image_path, depth_image_path, output
     pcd.points = o3d.utility.Vector3dVector(points)
     pcd.colors = o3d.utility.Vector3dVector(colors)
 
-    # 可视化点云
-    o3d.visualization.draw_geometries([pcd])
+    # # 可视化点云
+    # o3d.visualization.draw_geometries([pcd])
 
     # 保存点云
     o3d.io.write_point_cloud(output_ply_path, pcd)
@@ -167,27 +166,31 @@ def main():
     主函数 - 示例使用
     """
     # 文件路径配置
-    base_path = "/home/jd/wangzhiwei225/JDCode/RobotTaskSupervisor2/SourceVision/handeye_data/2/"
-    target_path="/home/jd/wangzhiwei225/JDCode/RobotTaskSupervisor2/SourceVision/handeye_data/"
-    rgb_image_path = os.path.join(base_path, "rgb_22.png")
-    depth_image_path = os.path.join(base_path, "depth_22.xml")
+    base_path = "/home/jd/wangzhiwei225_data/标定数据/标定数据/xm_xb_01/realsense标定数据20260116/2"
+    target_path="/home/jd/wangzhiwei225_data/标定数据/标定数据/xm_xb_01/realsense标定数据20260116/pointcloud_2"
     camera_intr_path = os.path.join(base_path, "TYRgbCameraParameters.xml")
-    output_ply_path = os.path.join(target_path, "RGB2_22.pcd")
-
+    start=0
+    end=29
     # try:
     # 读取相机参数
     intr_matrix, dist_coeffs = read_camera_parameters(camera_intr_path)
-
-    # 生成彩色点云
-    generate_point_cloud_from_rgb_depth(
-        rgb_image_path,
-        depth_image_path,
-        output_ply_path,
-        intr_matrix,
-        dist_coeffs,
-        depth_scale=1000.0
-    )
-
+    file_list = os.listdir(base_path)
+    for file in file_list:
+        if file.endswith(".xml") and file[:6]=="depth_":
+            index=file.split(".")[0].split("_")[-1]
+            if start<=int(index)<=end:
+                rgb_image_path = os.path.join(base_path, f"rgb_{index}.png")
+                depth_image_path = os.path.join(base_path, file)
+                output_ply_path = os.path.join(target_path, f"{index}.pcd")
+                # 生成彩色点云
+                generate_point_cloud_from_rgb_depth(
+                    rgb_image_path,
+                    depth_image_path,
+                    output_ply_path,
+                    intr_matrix,
+                    dist_coeffs,
+                    depth_scale=1000.0
+                )
     # generate_point_cloud_from_depth_only("/home/jd/wangzhiwei225_data/标定数据/handeye_data/l3/6/depth_0.xml","/home/jd/wangzhiwei225_data/标定数据/handeye_data/l3/6/depth_0.pcd")
 
     # except Exception as e:

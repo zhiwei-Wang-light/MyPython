@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
+
 def hungarian_match(cost_matrix, cost_threshold=None):
     """
     Args:
@@ -28,6 +29,8 @@ def hungarian_match(cost_matrix, cost_threshold=None):
     unmatched_cols = [j for j in range(cost_matrix.shape[1]) if j not in matched_cols]
 
     return matches, unmatched_rows, unmatched_cols
+
+
 cost = np.array([
     [0.2, 0.8, 0.6],
     [0.5, 0.3, 0.9],

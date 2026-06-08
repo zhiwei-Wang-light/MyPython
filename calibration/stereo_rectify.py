@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 c1_images_names = sorted(
-    glob.glob('/home/jd/wangzhiwei225_data/标定数据/handeye_data_1231/handeye_data/2/gray_*.png'))
+    glob.glob('/home/jd/wangzhiwei225/JDCode/RobotTaskSupervisor2/SourceVision/handeye_data/gray_*.png'))
 c2_images_names = sorted(
-    glob.glob('/home/jd/wangzhiwei225_data/标定数据/handeye_data_1231/handeye_data/2/rgb_*.png'))
+    glob.glob('/home/jd/wangzhiwei225/JDCode/RobotTaskSupervisor2/SourceVision/handeye_data/rgb_*.png'))
 print(c1_images_names)
 print(c2_images_names)
 c1_images = []
@@ -76,8 +76,8 @@ print("F:",F)
 img_size = (640*2, 480*2)
 
 img1 = cv2.imread(
-    '/home/jd/wangzhiwei225_data/标定数据/handeye_data_1231/handeye_data/2/gray_18.png', 1)
-img2 = cv2.imread('/home/jd/wangzhiwei225_data/标定数据/handeye_data_1231/handeye_data/2/rgb_18.png',
+    '/home/jd/wangzhiwei225/JDCode/RobotTaskSupervisor2/SourceVision/handeye_data/gray_8.png', 1)
+img2 = cv2.imread('/home/jd/wangzhiwei225/JDCode/RobotTaskSupervisor2/SourceVision/handeye_data/rgb_8.png',
                   1)
 # img1=cv2.rotate(img1,cv2.ROTATE_90_CLOCKWISE)
 # img2=cv2.rotate(img2,cv2.ROTATE_90_CLOCKWISE)

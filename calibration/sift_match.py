@@ -61,14 +61,14 @@ def feature_matching_with_bf(image_path1, image_path2, window_size=(1200, 600)):
     matches = sorted(matches, key=lambda x: x.distance)
 
     # 获取前10个最佳匹配
-    top10_matches = matches[:200]
+    top10_matches = matches[:20]
     # 准备用于RANSAC的点
     src_pts = np.float32([kp1[m.queryIdx].pt for m in top10_matches]).reshape(-1, 1, 2)
     dst_pts = np.float32([kp2[m.trainIdx].pt for m in top10_matches]).reshape(-1, 1, 2)
 
     # 使用RANSAC计算单应性矩阵并筛选离群点
     if len(src_pts) >= 4:  # 至少需要4个点来计算单应性矩阵
-        H, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 1.0)
+        H, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 10.0)
         mask = mask.ravel().tolist()
     else:
         print("Warning: Not enough points for RANSAC (need at least 4)")
@@ -205,8 +205,8 @@ def resize_and_pad(image: np.ndarray,
 
 # 使用示例
 if __name__ == "__main__":
-    image1_path = f"/home/jd/wangzhiwei225_data/bev数据/xm_xb_01/handeye_data_0105/home/jd/RobotTaskSupervisor2/SourceVision/handeye_data/1/rgb_227.png"  # 替换为你的第一张图像路径
-    image2_path = f"/home/jd/wangzhiwei225_data/bev数据/xm_xb_01/handeye_data_0105/home/jd/RobotTaskSupervisor2/SourceVision/handeye_data/1/rgb_228.png"  # 替换为你的第二张图像路径
+    image1_path = f"/home/jd/wangzhiwei225_data/标定数据/标定数据/tw_model_c_02/202605260957/calibration/9to7/sync_capture/camera_0/rgb_00.jpg"  # 替换为你的第一张图像路径
+    image2_path = f"/home/jd/wangzhiwei225_data/标定数据/标定数据/tw_model_c_02/202605260957/calibration/9to7/sync_capture/camera_1/rgb_00.jpg"  # 替换为你的第二张图像路径
     # K = np.array([[500.0, 0, 320.0],
     #               [0, 500.0, 180.0],
     #               [0, 0, 1.0]])
