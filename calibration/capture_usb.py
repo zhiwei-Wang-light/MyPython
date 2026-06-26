@@ -337,11 +337,8 @@ class MultiUSBCameraManager:
         while self.running:
             try:
                 # grab()快速获取下一帧
-                tt1 = time.time()
                 if cap.grab():
                     ret, frame = cap.retrieve()
-                    tt2 = time.time()
-                    print((tt2 - tt1) * 1000)
                     if ret and frame is not None:
                         # 使用锁更新帧数据
                         with self.frame_lock:
