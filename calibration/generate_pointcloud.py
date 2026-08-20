@@ -51,7 +51,7 @@ def generate_point_cloud_from_rgb_depth(rgb_image_path, depth_image_path, output
     for v in range(height):
         for u in range(width):
             # 获取深度值并转换为米
-            depth = depth_image[v, u, 2] / depth_scale  # 假设Z通道包含深度信息
+            depth = depth_image[v, u] / depth_scale  # 假设Z通道包含深度信息
             if np.isnan(depth):
                 continue  # 跳过无效深度
             # 计算3D坐标
@@ -149,7 +149,7 @@ def parse_arguments():
     # 模式选择（互斥组）
     mode_group = parser.add_mutually_exclusive_group(required=True)
     mode_group.add_argument(
-        '--rgb',
+        '-r','--rgb',
         type=str,
         help='RGB图像路径（启用带纹理模式）'
     )
